@@ -1,0 +1,34 @@
+version: '3'
+
+networks:
+  traefik_web:
+    external: true
+    
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    networks:
+      - traefik_web
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /data/app_data/portainer/data:/data
+    labels:
+      # Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.entrypoints=web, websecure"
+      - "traefik.http.routers.portainer.rule=Host($(PORTAINER_DNS_NAME))" 
+      - "traefik.htpp.routers.portainer.tls=true"
+      - "traefik.http.routers.portainer.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)" 
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000" 
+      # Monitoring Labels
+      - uptime.monitor.name=Portainer
+      - uptime.monitor.Portainer.type=docker
+      - uptime.monitor.Portainer.dockerhost=myhost
+      - uptime.monitor.name=Portainer-Internal
+      - uptime.monitor.Portainer-Internal.type=http
+      - uptime.monitor.Portainer-Internal.url=http://$(PORTAINER_DNS_NAME):9000/admin/

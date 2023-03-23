@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  photoprism:
+    container_name: PhotoPrism
+    image: photoprism/photoprism
+    networks:
+      - traefik_web
+    restart: always
+    security_opt:
+      - "seccomp=unconfined"
+      - "apparmor=unconfined"
+    volumes:
+      - $(PRISM_DATA_PATH):/photoprism/originals
+    environment:
+      - PHOTOPRISM_UPLOAD_NSFW=true
+      - PHOTOPRISM_ADMIN_PASSWORD=$(PRISM_ADMIN_PW)
+    labels:
+      # Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.prism.entrypoints=web, websecure"
+      - "traefik.http.routers.prism.rule=Host($(PRISM_DNS_NAME))"
+      - "traefik.htpp.routers.prism.tls=true"
+      - "traefik.http.routers.prism.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)"
+      # Monitoring Labels
+      - uptime.monitor.name=Prism
+      - uptime.monitor.Prism.type=docker
+      - uptime.monitor.Prism.dockerhost=myhost
+      - uptime.monitor.name=Prism-Internal
+      - uptime.monitor.Prism-Internal.type=http
+      - uptime.monitor.Prism-Internal.url=https://$(PRISM_DNS_NAME)/

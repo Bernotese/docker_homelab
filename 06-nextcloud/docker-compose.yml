@@ -1,0 +1,29 @@
+version: '3'
+
+networks:
+  traefik_web:
+    external: true
+
+services:
+ nextcloud:
+    container_name: nextcloud
+    image: nextcloud
+    restart: always
+    networks:
+      - traefik_web
+    volumes:
+      - $(NEXTCLOUD_DATA_PATH):/var/www/html
+    labels:
+      # Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.entrypoints=web, websecure"
+      - "traefik.http.routers.nextcloud.rule=Host($(NEXTCLOUD_DNS_NAME))"
+      - "traefik.htpp.routers.nextcloud.tls=true"
+      - "traefik.http.routers.nextcloud.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)"
+      # Monitoring Labels
+      - uptime.monitor.name=Nextcloud
+      - uptime.monitor.Nextcloud.type=docker
+      - uptime.monitor.Nextcloud.dockerhost=myhost
+      - uptime.monitor.name=Nextcloud-Internal
+      - uptime.monitor.Nextcloud-Internal.type=http
+      - uptime.monitor.Nextcloud-Internal.url=https://$(NEXTCLOUD_DNS_NAME)/

@@ -1,0 +1,27 @@
+version: '3'
+
+networks:
+  traefik_web:
+    external: true
+
+services:
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    networks:
+      - traefik_web
+    restart: always
+    labels:
+      # Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.entrypoints=web, websecure"
+      - "traefik.http.routers.grafana.rule=Host($(GRAFANA_DNS_NAME))" 
+      - "traefik.htpp.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)"
+      # Monitoring Labels
+      - uptime.monitor.name=Grafana
+      - uptime.monitor.Grafana.type=docker
+      - uptime.monitor.Grafana.dockerhost=myhost
+      - uptime.monitor.name=Grafana-Internal
+      - uptime.monitor.Grafana-Internal.type=http
+      - uptime.monitor.Grafana-Internal.url=https://$(GRAFANA_DNS_NAME)/

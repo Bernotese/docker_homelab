@@ -1,0 +1,24 @@
+version: '3'
+
+networks:
+  traefik_web:
+    external: true
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma
+    container_name: kuma
+    restart: always
+    networks:
+      - traefik_web
+    volumes:
+      - $(KUMA_DATA_PATH):/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels: 
+      # Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.kuma.entrypoints=web, websecure"
+      - "traefik.http.routers.kuma.rule=Host($(KUMA_DNS_NAME))"
+      - "traefik.htpp.routers.kuma.tls=true"
+      - "traefik.http.routers.kuma.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)"
+      - "traefik.http.services.kuma.loadBalancer.server.port=3001"

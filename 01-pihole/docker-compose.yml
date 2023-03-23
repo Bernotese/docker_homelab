@@ -1,0 +1,38 @@
+version: "3"
+
+networks:
+  traefik_web:
+    external: true
+
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    networks:
+      - traefik_web
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "$(PIHOLE_DASHBOARD_PORT):80/tcp"
+    environment:
+      TZ: 'Europe/Berlin'
+      WEBPASSWORD: $(PIHOLE_WEBPASSWORD)
+    volumes:
+      - '$(PIHOLE_ETC_PATH):/etc/pihole'
+      - '$(PIHOLE_DNSMASQ_PATH):/etc/dnsmasq.d'
+    labels:
+      #Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.pihole.entrypoints=web, websecure"
+      - "traefik.http.routers.pihole.rule=Host($(PIHOLE_DNS_NAME))"
+      - "traefik.htpp.routers.pihole.tls=false"
+      - "traefik.http.routers.pihole.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)" 
+      - "traefik.http.services.pihole.loadbalancer.server.port=8080"
+      #Monitoring Labels
+      - uptime.monitor.name=PiHole
+      - uptime.monitor.PiHole.type=docker
+      - uptime.monitor.PiHole.dockerhost=myhost
+      - uptime.monitor.name=PiHole-Internal
+      - uptime.monitor.PiHole-Internal.type=http
+      - uptime.monitor.PiHole-Internal.url=http://$(PIHOLE_DNS_NAME):$(PIHOLE_DASHBOARD_PORT)/admin/
+    restart: always

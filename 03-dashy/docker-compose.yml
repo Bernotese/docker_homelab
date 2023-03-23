@@ -1,0 +1,29 @@
+version: '3'
+
+networks:
+  traefik_web:
+    external: true
+
+services:
+  dashy:
+    image: lissy93/dashy
+    container_name: dashy
+    volumes:
+      - $(DASHY_CONFIG_PATH):/app/public/conf.yml
+    networks:
+      - traefik_web
+    restart: always
+    labels:
+      # Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashy.entrypoints=web, websecure"
+      - "traefik.http.routers.dashy.rule=Host($(DASHY_DNS_NAME))"
+      - "traefik.htpp.routers.dashy.tls=true"
+      - "traefik.http.routers.dashy.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)"
+      # Monitoring Labels
+      - uptime.monitor.name=Dashy
+      - uptime.monitor.Dashy.type=docker
+      - uptime.monitor.Dashy.dockerhost=myhost
+      - uptime.monitor.name=Dashy-Internal
+      - uptime.monitor.Dashy-Internal.type=http
+      - uptime.monitor.Dashy-Internal.url=http://$(DASHY_DNS_NAME)/

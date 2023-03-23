@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  db:
+    image: mysql
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: $(MYSQL_ROOT_PW)
+    volumes:
+      - $(MYSQL_DATA_PATH):/var/lib/mysql:rw
+    ports:
+      - $(MYSQL_PORT):3306
+    
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    links:
+      - "db" # Container Name form DB Container
+    environment:
+      PMA_HOST: db
+      PMA_PORT: $(MYSQL_PORT)
+      PMA_ARBITRARY: 1
+    restart: always
+    labels:
+      #Traefik Labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.myadmin.entrypoints=web, websecure"
+      - "traefik.http.routers.myadmin.rule=Host($(PHPMYADMIN_DNS_NAME))"
+      - "traefik.htpp.routers.myadmin.tls=false"
+      - "traefik.http.routers.myadmin.tls.certresolver=$(TRAEFIK_SSL_CERT_ENV)" 
+      - "traefik.http.services.myadmin.loadbalancer.server.port=8080"
+      # Monitoring Labels
+      - uptime.monitor.name=phpMyAdmin
+      - uptime.monitor.phpMyAdmin.type=docker
+      - uptime.monitor.phpMyAdmin.dockerhost=myhost
+      - uptime.monitor.name=phpMyAdmin-Internal
+      - uptime.monitor.phpMyAdmin-Internal.type=http
+      - uptime.monitor.phpMyAdmin-Internal.url=https://$(PHPMYADMIN_DNS_NAME)/
